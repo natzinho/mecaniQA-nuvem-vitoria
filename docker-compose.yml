@@ -1,0 +1,24 @@
+services:
+  db:
+    build:
+      context: .
+      dockerfile: mysql/Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    build:
+      context: .
+      dockerfile: redis/Dockerfile
+
+  api:
+    build:
+      context: .
+      dockerfile: java/Dockerfile
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
