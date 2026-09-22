@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: mecaniqa-nuvem-vitoria-db:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123456"
+            - name: MYSQL_DATABASE
+              value: "mecaniqa"
+          volumeMounts:
+            - name: db-init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: db-init
+          configMap:
+            name: db-init
