@@ -1,0 +1,115 @@
+# Fixtures unitarias: nao representam medicoes reais do cluster.
+# x != x identifica NaN sem comparar NaN diretamente no promtool.
+evaluation_interval: 15s
+fuzzy_compare: true
+tests:
+- name: CPU memoria e resultados conhecidos - fixtures, nao telemetria do cluster
+  interval: 15s
+  input_series:
+  - series: process_cpu_seconds_total{job="iot-simulator",instance="iot-simulator:8000"}
+    values: 0+1.5x12
+  - series: process_resident_memory_bytes{job="iot-simulator",instance="iot-simulator:8000"}
+    values: 10485760+0x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-01",result="success"}
+    values: 0+3x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-01",result="error"}
+    values: 0+1x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-02",result="success"}
+    values: 0+3x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-02",result="error"}
+    values: 0+1x12
+  promql_expr_test:
+  - expr: 100 * rate(process_cpu_seconds_total{job="iot-simulator"}[1m])
+    eval_time: 2m
+    exp_samples:
+    - labels: '{job="iot-simulator",instance="iot-simulator:8000"}'
+      value: 10
+  - expr: process_resident_memory_bytes{job="iot-simulator"}
+    eval_time: 2m
+    exp_samples:
+    - labels: process_resident_memory_bytes{job="iot-simulator",instance="iot-simulator:8000"}
+      value: 10485760
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 0.13333333333333333
+  - expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 25
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 0.4
+  - expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 75
+- name: Sem trafego nao significa 0 por cento de erros ou 100 por cento de sucessos
+  interval: 15s
+  input_series:
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-01",result="success"}
+    values: 0+0x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-01",result="error"}
+    values: 0+0x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-02",result="success"}
+    values: 0+0x12
+  - series: iot_sensor_operations_total{job="iot-simulator",instance="iot-simulator:8000",sensor_id="sensor-02",result="error"}
+    values: 0+0x12
+  promql_expr_test:
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count((100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))) != (100 *
+      sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 0
+  - expr: count((100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))) != (100 *
+      sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))))
+    eval_time: 2m
+    exp_samples:
+    - labels: '{}'
+      value: 1
+- name: Ausencia de coleta permanece sem dados
+  interval: 15s
+  input_series: []
+  promql_expr_test:
+  - expr: 100 * rate(process_cpu_seconds_total{job="iot-simulator"}[1m])
+    eval_time: 2m
+    exp_samples: []
+  - expr: process_resident_memory_bytes{job="iot-simulator"}
+    eval_time: 2m
+    exp_samples: []
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+    eval_time: 2m
+    exp_samples: []
+  - expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))
+    eval_time: 2m
+    exp_samples: []
+  - expr: sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+    eval_time: 2m
+    exp_samples: []
+  - expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))
+      / sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))
+    eval_time: 2m
+    exp_samples: []

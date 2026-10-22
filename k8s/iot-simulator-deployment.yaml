@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: iot-simulator
-          image: mecaniqa-iot-simulator:0.1.0
+          image: mecaniqa-iot-simulator:0.2.0
           imagePullPolicy: Never
           ports:
             - name: metrics
@@ -34,6 +34,8 @@ spec:
               value: "5"
             - name: SENSOR_COUNT
               value: "3"
+            - name: SIMULATION_ERROR_PROBABILITY
+              value: "0.1"
           resources:
             requests:
               cpu: 50m

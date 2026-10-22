@@ -1,0 +1,154 @@
+{
+  "id": null,
+  "uid": "mecaniqa-erros",
+  "title": "Erro na aplicação",
+  "description": "Tentativas de aquisição por equipamento. Uma tentativa bem-sucedida gera três leituras; falhas são sintéticas. Não mede acurácia de diagnóstico.",
+  "tags": [
+    "mecaniqa",
+    "continuidade"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "refresh": "15s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Falhas de aquisição por segundo",
+      "description": "Taxa de operações agregada entre equipamentos, usando Counter e rate antes de sum.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mecaniqa-prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "noValue": "Sem dados / sem tráfego",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mecaniqa-prometheus"
+          },
+          "expr": "sum(rate(iot_sensor_operations_total{job=\"iot-simulator\",result=\"error\"}[1m]))",
+          "legendFormat": "Falhas",
+          "editorMode": "code",
+          "range": true,
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Falhas — percentual das tentativas",
+      "description": "Denominador inclui success e error. Sem operações, a divisão retorna NaN; ausência de coleta não vira zero.",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "mecaniqa-prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "noValue": "Sem dados / sem tráfego",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mecaniqa-prometheus"
+          },
+          "expr": "100 * sum(rate(iot_sensor_operations_total{job=\"iot-simulator\",result=\"error\"}[1m])) / sum(rate(iot_sensor_operations_total{job=\"iot-simulator\"}[1m]))",
+          "legendFormat": "Falhas",
+          "editorMode": "code",
+          "range": false,
+          "instant": true
+        }
+      ]
+    }
+  ]
+}

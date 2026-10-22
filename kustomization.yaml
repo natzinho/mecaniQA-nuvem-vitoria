@@ -1,0 +1,18 @@
+# Este overlay implanta somente o Grafana; Prometheus e simulador ja existem.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mecaniqa
+resources:
+  - k8s/grafana-deployment.yaml
+  - k8s/grafana-service.yaml
+configMapGenerator:
+  - name: grafana-provisioning
+    files:
+      - monitoring/grafana/provisioning/datasources.yaml
+      - monitoring/grafana/provisioning/dashboards.yaml
+  - name: grafana-dashboards
+    files:
+      - monitoring/grafana/dashboards/cpu.json
+      - monitoring/grafana/dashboards/memoria.json
+      - monitoring/grafana/dashboards/erro-aplicacao.json
+      - monitoring/grafana/dashboards/sucesso-aplicacao.json

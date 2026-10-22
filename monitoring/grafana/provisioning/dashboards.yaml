@@ -1,0 +1,14 @@
+apiVersion: 1
+providers:
+  - name: mecaniqa-continuidade
+    orgId: 1
+    folder: Monitorando a Continuidade
+    folderUid: mecaniqa-continuidade
+    type: file
+    disableDeletion: false
+    editable: false
+    updateIntervalSeconds: 15
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
