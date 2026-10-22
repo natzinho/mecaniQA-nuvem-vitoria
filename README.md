@@ -328,6 +328,156 @@ Para verificar os Services:
 kubectl get services
 ```
 
+## OAT 2 - Simulador IoT e Prometheus
+
+O simulador foi criado pela equipe para o OAT 2, conforme orientação do professor.
+Ele gera dados sintéticos de três equipamentos, identificados por `sensor_id`
+(`sensor-01` a `sensor-03`). Cada equipamento produz três leituras a cada cinco
+segundos. Os valores são independentes e aleatórios; não representam diagnósticos
+ou telemetria real.
+
+O fluxo é: **simulador Python → Service iot-simulator:8000 → Prometheus**.
+O Prometheus coleta `/metrics` a cada 15 segundos. Os cinco manifestos novos
+declaram explicitamente o namespace `mecaniqa`, definido pelo Terraform existente.
+Os manifestos anteriores de API, MySQL e Redis continuam com seu escopo original.
+
+### Métricas
+
+| Métrica | Tipo | Significado |
+| --- | --- | --- |
+| `iot_engine_temperature_celsius` | Gauge | Temperatura entre 70 e 110 °C |
+| `iot_oil_pressure_bar` | Gauge | Pressão do óleo entre 1,5 e 5,5 bar |
+| `iot_vibration_meters_per_second_squared` | Gauge | Aceleração de vibração entre 0,1 e 4 m/s² |
+| `iot_sensor_readings_total` | Counter | Total de leituras individuais: aumenta 3 por ciclo e equipamento |
+| `iot_sensor_last_update_timestamp_seconds` | Gauge | Horário Unix da última atualização por equipamento |
+
+Todas essas métricas usam apenas o label `sensor_id`. O cliente Prometheus também
+expõe suas métricas padrão de processo/runtime conforme a plataforma.
+O contador reinicia quando o processo é reiniciado.
+
+| Variável de ambiente | Padrão | Valores aceitos |
+| --- | --- | --- |
+| `METRICS_PORT` | `8000` | Inteiro de 1 a 65535 |
+| `SIMULATION_INTERVAL_SECONDS` | `5` | Número finito maior que zero |
+| `SENSOR_COUNT` | `3` | Inteiro de 1 a 100 |
+
+Alterações da porta também exigem ajustar os manifestos do Deployment, Service
+e a configuração de coleta do Prometheus. Para esta versão, mantenha uma réplica
+do simulador: a coleta usa um único endereço de Service, sem descoberta por Pod.
+
+### Executar somente o simulador
+
+Na raiz do repositório, com Python 3.12 instalado, no PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r iot-simulator/requirements.txt
+.\.venv\Scripts\python.exe iot-simulator/simulator.py
+```
+
+Em outro terminal, consulte `http://localhost:8000/metrics`:
+
+```powershell
+curl.exe http://localhost:8000/metrics
+```
+
+### Implantar no Kind
+
+Pré-requisitos: Docker em execução, Kind, kubectl, Terraform e um cluster Kind
+existente. Execute os comandos a partir da raiz do repositório. Confirme o contexto
+antes de aplicar e ajuste o nome do cluster se não for `kind`:
+
+```powershell
+$clusterName = "kind"
+kind get clusters
+kubectl config current-context
+```
+
+Crie o namespace com a configuração Terraform existente (se ainda não foi criada,
+revise o plano antes de confirmar o apply):
+
+```powershell
+terraform -chdir=terraform init
+terraform -chdir=terraform plan
+terraform -chdir=terraform apply
+kubectl get namespace mecaniqa
+```
+
+Construa e carregue a imagem em todos os nós do cluster Kind:
+
+```powershell
+docker build -t mecaniqa-iot-simulator:0.1.0 ./iot-simulator
+kind load docker-image mecaniqa-iot-simulator:0.1.0 --name $clusterName
+```
+
+O simulador usa `imagePullPolicy: Never`, portanto a imagem precisa estar carregada
+antes da implantação. O Prometheus usa a imagem versionada `prom/prometheus:v3.5.0`,
+baixada do registry pelo cluster. Valide a configuração com o promtool da mesma
+versão antes de aplicar:
+
+```powershell
+$config = Get-Content -Raw k8s/prometheus-configmap.yaml
+# O ConfigMap começa seu conteúdo prometheus.yml após a linha do bloco literal.
+$prometheusYaml = ($config -split 'prometheus.yml: \|\r?\n', 2)[1] -replace '(?m)^    ', ''
+$prometheusYaml | docker run --rm -i --entrypoint /bin/sh prom/prometheus:v3.5.0 -c 'cat > /tmp/prometheus.yml && promtool check config /tmp/prometheus.yml'
+```
+
+Valide os cinco recursos contra a API do cluster e aplique somente os arquivos
+desta etapa:
+
+```powershell
+kubectl apply --dry-run=server --validate=strict -f k8s/iot-simulator-deployment.yaml -f k8s/iot-simulator-service.yaml -f k8s/prometheus-configmap.yaml -f k8s/prometheus-deployment.yaml -f k8s/prometheus-service.yaml
+kubectl apply -f k8s/iot-simulator-deployment.yaml -f k8s/iot-simulator-service.yaml -f k8s/prometheus-configmap.yaml -f k8s/prometheus-deployment.yaml -f k8s/prometheus-service.yaml
+kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
+kubectl -n mecaniqa rollout status deployment/prometheus --timeout=180s
+kubectl -n mecaniqa get pods,services
+kubectl -n mecaniqa logs deployment/iot-simulator
+```
+
+### Verificar a coleta
+
+Em dois terminais separados, mantenha os encaminhamentos abertos:
+
+```powershell
+kubectl -n mecaniqa port-forward service/iot-simulator 8000:8000
+```
+
+```powershell
+kubectl -n mecaniqa port-forward service/prometheus 9090:9090
+```
+
+Verifique `http://localhost:8000/metrics` e, no Prometheus,
+`http://localhost:9090/targets`. Aguarde pelo menos um intervalo de coleta e
+confirme que o job `iot-simulator` aparece como **UP**.
+Na interface `http://localhost:9090`, execute:
+
+```promql
+up{job="iot-simulator"}
+iot_engine_temperature_celsius
+rate(iot_sensor_readings_total[1m])
+time() - iot_sensor_last_update_timestamp_seconds
+```
+
+O resultado de `up` deve ser `1`; a temperatura deve apresentar três séries.
+Após cerca de um minuto, a taxa esperada é aproximadamente `0.6` leituras por
+segundo por equipamento. O tempo desde a atualização deve permanecer próximo
+dos intervalos de simulação/coleta. Se o alvo estiver DOWN, confira Pods, logs,
+selectors dos Services e acesso a `iot-simulator:8000` dentro do namespace.
+
+Esta versão usa `emptyDir` no Prometheus: o histórico é perdido quando o Pod é
+substituído. A retenção é de até um dia, limitada também a 256 MB de blocos;
+o volume tem limite de 512 MiB. Não há persistência para esta demonstração.
+Após modificar o ConfigMap, aplique-o e reinicie o Deployment para carregar a
+nova configuração:
+
+```powershell
+kubectl apply -f k8s/prometheus-configmap.yaml
+kubectl -n mecaniqa rollout restart deployment/prometheus
+```
+
+O commit da versão inicial na branch `main` será feito somente após a revisão
+das alterações e dos resultados de validação.
+
 ## Equipe
 
 **Time Vitória**

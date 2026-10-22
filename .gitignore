@@ -24,3 +24,8 @@ Thumbs.db
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
