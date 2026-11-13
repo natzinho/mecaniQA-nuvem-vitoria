@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+  namespace: default
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: mecaniqa-nuvem-vitoria-db:latest
+              imagePullPolicy: Never
+              env:
+                - name: MYSQL_ROOT_PASSWORD
+                  value: "123456"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  FILE="/backups/mecaniqa-$(date +%Y%m%d-%H%M%S).sql"
+                  mysqldump -h db -uroot -p"$MYSQL_ROOT_PASSWORD" \
+                    --single-transaction --routines --triggers mecaniqa > "$FILE"
+                  echo "Backup criado: $FILE"
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: mysql-backup-pvc
+

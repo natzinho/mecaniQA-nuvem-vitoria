@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: db
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -26,7 +27,13 @@ spec:
           volumeMounts:
             - name: db-init
               mountPath: /docker-entrypoint-initdb.d
+            - name: mysql-data
+              mountPath: /var/lib/mysql
       volumes:
         - name: db-init
           configMap:
             name: db-init
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+
