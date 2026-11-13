@@ -10,6 +10,7 @@ configMapGenerator:
     files:
       - monitoring/grafana/provisioning/datasources.yaml
       - monitoring/grafana/provisioning/dashboards.yaml
+      - monitoring/grafana/provisioning/alerting/alert-rules.yaml
   - name: grafana-dashboards
     files:
       - monitoring/grafana/dashboards/cpu.json

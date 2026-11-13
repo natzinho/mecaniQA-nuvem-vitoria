@@ -1,0 +1,279 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: mecaniqa-alerts
+    folder: Monitorando a Continuidade
+    interval: 1m
+    rules:
+      - uid: mecaniqa-cpu-alto
+        title: CPU acima de 80% da capacidade reservada
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mecaniqa-prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: mecaniqa-prometheus
+              editorMode: code
+              expr: max(100 * rate(process_cpu_seconds_total{job="iot-simulator"}[1m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [4]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: O consumo de CPU do simulador ultrapassou o limite definido.
+        labels:
+          severity: warning
+
+      - uid: mecaniqa-memoria-alta
+        title: Memória acima de 85% da capacidade reservada
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mecaniqa-prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: mecaniqa-prometheus
+              editorMode: code
+              expr: max(process_resident_memory_bytes{job="iot-simulator"}) / 1024 / 1024
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [27.2]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: A memória utilizada pelo simulador ultrapassou o limite definido.
+        labels:
+          severity: warning
+
+      - uid: mecaniqa-erros-alto
+        title: Taxa de erros acima de 20%
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mecaniqa-prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: mecaniqa-prometheus
+              editorMode: code
+              expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m])) / clamp_min(sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m])), 1e-9)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [20]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: A porcentagem de operações com erro ultrapassou 20%.
+        labels:
+          severity: warning
+
+      - uid: mecaniqa-sucesso-baixo
+        title: Taxa de sucesso abaixo de 80%
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mecaniqa-prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: mecaniqa-prometheus
+              editorMode: code
+              expr: 100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m])) / clamp_min(sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m])), 1e-9)
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [80]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: A porcentagem de operações bem-sucedidas caiu abaixo de 80%.
+        labels:
+          severity: warning

@@ -10,6 +10,16 @@ data:
       scrape_timeout: 5s
     scrape_configs:
       - job_name: iot-simulator
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - mecaniqa
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: iot-simulator
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: metrics
         metrics_path: /metrics
-        static_configs:
-          - targets: ["iot-simulator:8000"]

@@ -82,6 +82,10 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
               subPath: dashboards
               readOnly: true
+            - name: provisioning
+              mountPath: /etc/grafana/provisioning/alerting
+              subPath: alerting
+              readOnly: true
             - name: dashboards
               mountPath: /var/lib/grafana/dashboards
               readOnly: true
@@ -98,6 +102,8 @@ spec:
                 path: datasources/datasources.yaml
               - key: dashboards.yaml
                 path: dashboards/dashboards.yaml
+              - key: alert-rules.yaml
+                path: alerting/alert-rules.yaml
         - name: dashboards
           configMap:
             name: grafana-dashboards
