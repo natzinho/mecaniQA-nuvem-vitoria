@@ -1,28 +1,45 @@
-# MecâniQA Nuvem — Time Vitória
+# MecâniQA Nuvem - Time Vitória
 
-Projeto desenvolvido durante as aulas de **Computação em Nuvem**, com foco na construção de uma infraestrutura containerizada para a aplicação MecâniQA, utilizando **Docker, Docker Compose, Kubernetes, K9s e Terraform**.
+Projeto desenvolvido durante as aulas de **Computação em Nuvem**, com foco na construção de uma infraestrutura containerizada, monitorada e escalável para a aplicação MecâniQA, utilizando Docker, Docker Compose, Kubernetes, K9s, Terraform, Prometheus e Grafana.
 
-## Objetivo
+**Repositório:** https://github.com/natzinho/mecaniQA-nuvem-vitoria
 
-Construir uma base de infraestrutura para a aplicação MecâniQA, composta por uma API Java, um banco de dados MySQL e um serviço Redis.
+---
 
-O projeto evolui de uma execução individual dos serviços em containers para uma arquitetura com **orquestração local utilizando Docker Compose** e, posteriormente, **gerenciamento das aplicações com Kubernetes**.
+## 1. Objetivo
 
-Também foi utilizada a abordagem de **Infrastructure as Code (IaC)** com Terraform para definir recursos de infraestrutura de forma declarativa.
+Construir uma infraestrutura para a aplicação MecâniQA, composta por uma API Java, banco de dados MySQL e serviço Redis.
 
-## Contexto
+O projeto evolui de uma execução individual dos serviços em containers para uma arquitetura com Docker Compose e, posteriormente, gerenciamento das aplicações por meio do Kubernetes.
 
-A MecâniQA é uma startup SaaS voltada para oficinas mecânicas. A aplicação possui uma arquitetura composta por:
+Também foram implementados mecanismos de:
 
-* **Java** — aplicação principal e API
-* **MySQL** — banco de dados transacional
-* **Redis** — armazenamento em memória e cache
+- Monitoramento e observabilidade.
+- Coleta e visualização de métricas.
+- Alertas para identificação de incidentes.
+- Escalabilidade horizontal automática.
+- Persistência de dados.
+- Backup automatizado.
+- Procedimentos operacionais de resposta a incidentes.
+- Gestão de níveis de serviço.
 
-A infraestrutura anterior apresentava dificuldades relacionadas ao consumo de recursos e à estabilidade dos serviços. O projeto busca estabelecer uma base mais organizada e resiliente por meio do uso de containers e ferramentas de orquestração.
+## 2. Contexto
 
-## Arquitetura
+A MecâniQA é uma startup SaaS voltada para oficinas mecânicas.
 
-A infraestrutura desenvolvida está organizada da seguinte forma:
+A aplicação possui três serviços principais:
+
+| Serviço | Responsabilidade |
+|---|---|
+| Java / Spring Boot | Aplicação principal e API |
+| MySQL | Banco de dados transacional |
+| Redis | Armazenamento em memória e cache |
+
+A infraestrutura busca melhorar a organização, o gerenciamento de recursos e a capacidade de recuperação dos serviços por meio de containers, orquestração e monitoramento.
+
+## 3. Arquitetura
+
+A infraestrutura desenvolvida utiliza as seguintes tecnologias:
 
 ```text
 MecâniQA
@@ -31,11 +48,12 @@ MecâniQA
 │   └── API
 │
 ├── MySQL
-│   └── Banco de dados
+│   ├── Banco de dados
+│   └── Persistência com PVC
 │
 └── Redis
     └── Cache / armazenamento em memória
-
+     
 Docker
 └── Containers e imagens
 
@@ -46,24 +64,37 @@ Docker Compose
     └── Redis
 
 Kubernetes
-└── Cluster local
+└── Cluster local Kind
     ├── Deployments
     ├── Pods
     ├── Services
-    └── ConfigMap
+    ├── ConfigMaps
+    ├── PersistentVolumeClaims
+    ├── CronJobs
+    └── Horizontal Pod Autoscaler
 
-K9s
-└── Observação e administração do cluster
+Observabilidade
+├── Simulador IoT
+├── Prometheus
+└── Grafana
+    ├── Dashboards
+    └── Alertas
 
 Terraform
 └── Infrastructure as Code
     └── Namespace Kubernetes
 ```
 
-## Estrutura do projeto
+## 4. Estrutura do projeto
 
 ```text
 mecaniQA-nuvem-vitoria/
+│
+├── docs/
+│   ├── backup-e-recuperacao.md
+│   ├── gestao-servicos.md
+│   └── runbooks.md
+│
 ├── java/
 │   └── Dockerfile
 │
@@ -76,169 +107,166 @@ mecaniQA-nuvem-vitoria/
 ├── mecaniqa-api/
 │   ├── pom.xml
 │   └── src/
-│       └── main/
-│           ├── java/
-│           └── resources/
+│
+├── iot-simulator/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── simulator.py
 │
 ├── k8s/
 │   ├── api-deployment.yaml
 │   ├── api-service.yaml
 │   ├── db-deployment.yaml
-│   ├── db-init-configmap.yaml
 │   ├── db-service.yaml
+│   ├── db-init-configmap.yaml
+│   ├── db-pvc.yaml
+│   ├── db-backup-pvc.yaml
+│   ├── db-backup-cronjob.yaml
 │   ├── redis-deployment.yaml
-│   └── redis-service.yaml
+│   ├── redis-service.yaml
+│   ├── iot-simulator-deployment.yaml
+│   ├── iot-simulator-service.yaml
+│   ├── iot-simulator-hpa.yaml
+│   ├── metrics-server.yaml
+│   ├── prometheus-configmap.yaml
+│   ├── prometheus-deployment.yaml
+│   ├── prometheus-rbac.yaml
+│   ├── grafana-deployment.yaml
+│   └── grafana-service.yaml
+│
+├── monitoring/
+│   └── grafana/
+│       ├── dashboards/
+│       │   ├── cpu.json
+│       │   ├── memoria.json
+│       │   ├── erro-aplicacao.json
+│       │   └── sucesso-aplicacao.json
+│       │
+│       └── provisioning/
+│           ├── alerting/
+│           │   └── alert-rules.yaml
+│           ├── dashboards.yaml
+│           └── datasources.yaml
 │
 ├── terraform/
 │   ├── providers.tf
 │   └── namespace.tf
 │
+├── tests/
+│
 ├── docker-compose.yml
+├── kustomization.yaml
 └── README.md
 ```
 
-## Serviços e portas
+A estrutura apresenta os principais diretórios e arquivos do projeto. Alguns arquivos auxiliares de configuração e validação não estão listados individualmente.
 
-| Serviço    | Porta |
-| ---------- | ----: |
-| Java / API |  8080 |
-| MySQL      |  3306 |
-| Redis      |  6379 |
+## 5. Tecnologias utilizadas
 
-No Kubernetes, a API é disponibilizada por meio de um **Service do tipo NodePort**, enquanto MySQL e Redis utilizam **Services do tipo ClusterIP**, mantendo esses serviços disponíveis internamente no cluster.
+| Tecnologia | Utilização |
+|---|---|
+| Docker | Criação e execução de containers |
+| Docker Compose | Orquestração local |
+| Kubernetes | Orquestração dos serviços |
+| Kind | Cluster Kubernetes local |
+| kubectl | Administração do Kubernetes |
+| K9s | Visualização e administração do cluster |
+| Terraform | Infrastructure as Code |
+| Java 17 | Aplicação principal |
+| Spring Boot | Desenvolvimento da API |
+| MySQL 8.0 | Banco de dados |
+| Redis 7 | Cache |
+| Python | Simulador IoT |
+| Prometheus | Coleta de métricas |
+| Grafana | Dashboards e alertas |
+| Git / GitHub | Versionamento do projeto |
 
-## Dockerfiles
+## 6. Docker e Docker Compose
 
-Cada serviço possui seu próprio `Dockerfile`, permitindo a criação de imagens independentes:
+Cada serviço possui seu próprio Dockerfile, permitindo a criação de imagens independentes:
 
-* `java/Dockerfile`
-* `mysql/Dockerfile`
-* `redis/Dockerfile`
+- `java/Dockerfile`
+- `mysql/Dockerfile`
+- `redis/Dockerfile`
 
-### Java
+A API utiliza Java 17 com a imagem base `eclipse-temurin:17-jdk-alpine`.
 
-A API utiliza **Java 17** com a imagem base:
+O arquivo `docker-compose.yml` realiza a orquestração local dos serviços:
 
-```text
-eclipse-temurin:17-jdk-alpine
-```
+- API Java.
+- MySQL.
+- Redis.
 
-A aplicação é executada na porta `8080`.
+Os serviços compartilham uma rede interna, permitindo que a API acesse o banco de dados pelo nome do serviço `db`, sem depender de um endereço IP fixo.
 
-### MySQL
+O MySQL utiliza um volume nomeado:
 
-O banco de dados utiliza **MySQL 8.0** e a porta `3306`.
-
-### Redis
-
-O Redis utiliza a imagem **Redis 7 Alpine** e a porta `6379`.
-
-## Docker Compose
-
-O arquivo `docker-compose.yml` realiza a orquestração local dos três serviços:
-
-* API Java
-* MySQL
-* Redis
-
-O Docker Compose também fornece uma rede interna para os serviços. Dessa forma, a API pode acessar o banco de dados utilizando o nome do serviço:
-
-```text
-db
-```
-
-Em vez de utilizar um endereço IP fixo.
-
-O MySQL utiliza um **volume nomeado** para manter os dados fora do ciclo de vida do container:
-
-```text
+```yaml
 db_data:/var/lib/mysql
 ```
 
-## Kubernetes
+Esse volume mantém os dados fora do ciclo de vida do container.
 
-Após a etapa de orquestração com Docker Compose, os serviços foram convertidos para recursos declarativos do Kubernetes.
+### Executar com Docker Compose
 
-Foi utilizado um **cluster Kubernetes local com Kind**.
+Iniciar os serviços:
 
-Os principais recursos utilizados foram:
-
-* **Deployments** — mantêm os Pods desejados em execução.
-* **Pods** — unidades de execução dos containers no Kubernetes.
-* **Services** — fornecem comunicação estável entre os serviços.
-* **ConfigMap** — utilizado para disponibilizar o script inicial do MySQL.
-
-### Deployments
-
-A API possui três réplicas:
-
-```yaml
-replicas: 3
+```bash
+docker compose up -d
 ```
 
-MySQL e Redis possuem uma réplica cada.
+Verificar os containers:
 
-O Deployment da API foi testado removendo manualmente um Pod. O Kubernetes criou automaticamente outro Pod para manter a quantidade desejada de três réplicas.
-
-### Services
-
-A comunicação entre os serviços utiliza os nomes dos Services:
-
-```text
-api
-db
-redis
+```bash
+docker compose ps
 ```
 
-A API utiliza um Service **NodePort** para permitir acesso externo ao cluster local.
+Interromper os serviços:
 
-MySQL e Redis utilizam Services **ClusterIP**, mantendo a comunicação desses serviços dentro do cluster.
-
-### MySQL
-
-O banco é configurado com:
-
-```text
-MYSQL_ROOT_PASSWORD=123456
-MYSQL_DATABASE=mecaniqa
+```bash
+docker compose down
 ```
 
-Um ConfigMap fornece o script de inicialização:
+O volume nomeado do MySQL permanece armazenado após o comando `docker compose down`.
 
-```text
-init.sql
-```
+## 7. Kubernetes
 
-responsável pela criação do banco `mecaniqa`.
+Foi utilizado um cluster Kubernetes local com Kind.
 
-## K9s
+Os principais recursos utilizados são:
 
-O **K9s** foi utilizado para observar e administrar o cluster Kubernetes.
+| Recurso | Finalidade |
+|---|---|
+| Deployment | Gerenciamento dos Pods |
+| Pod | Execução dos containers |
+| Service | Comunicação entre serviços |
+| ConfigMap | Disponibilização de configurações |
+| PersistentVolumeClaim | Solicitação de armazenamento persistente |
+| CronJob | Execução de tarefas agendadas |
+| HPA | Escalabilidade horizontal automática |
 
-Com ele foram verificadas informações como:
+A API utiliza um Service do tipo `NodePort`, permitindo acesso externo ao cluster local.
 
-* Pods
-* Deployments
-* Services
-* Logs
-* Estado dos containers
-* Número de reinicializações
+MySQL e Redis utilizam Services do tipo `ClusterIP`, mantendo a comunicação desses serviços dentro do cluster.
 
-Também foi realizado um teste de auto-recuperação removendo um Pod da API e observando sua recriação automática pelo Deployment.
+A API possui três réplicas na configuração original, enquanto MySQL e Redis possuem uma réplica cada.
 
-Durante a inspeção, os Pods permaneceram em estado:
+Foi realizado um teste de auto-recuperação removendo manualmente um Pod da API. O Kubernetes criou automaticamente outro Pod para manter a quantidade desejada de réplicas.
 
-```text
-Running
-```
+### Namespaces
 
-sem reinicializações.
+O projeto possui recursos organizados em namespaces diferentes:
 
-## Terraform
+- `mecaniqa`: utilizado pelo Terraform e pelos recursos de monitoramento, simulador e Grafana.
+- `default`: utilizado pelos recursos originais da API, MySQL e Redis, além dos novos recursos de persistência e backup do MySQL.
 
-Foi utilizado **Terraform** como ferramenta de Infrastructure as Code.
+O `kustomization.yaml` da raiz é um overlay destinado à implantação do Grafana no namespace `mecaniqa`.
 
-Neste projeto, o Terraform utiliza o provider do Kubernetes para definir declarativamente um namespace:
+## 8. Terraform - Infrastructure as Code
+
+O Terraform foi utilizado para definir declarativamente recursos de infraestrutura.
+
+Neste projeto, foi utilizado o provider do Kubernetes para criar o namespace:
 
 ```text
 mecaniqa
@@ -250,7 +278,7 @@ O recurso está definido em:
 terraform/namespace.tf
 ```
 
-A infraestrutura é inicializada e gerenciada por meio de:
+Os comandos principais são:
 
 ```bash
 terraform init
@@ -258,420 +286,167 @@ terraform plan
 terraform apply
 ```
 
-Após a aplicação da configuração, o namespace `mecaniqa` foi criado no cluster Kubernetes.
+O `terraform plan` permite verificar as alterações previstas antes da aplicação.
 
-O `terraform plan` também foi utilizado posteriormente para verificar que a infraestrutura existente correspondia à configuração declarada.
+## 9. Simulador IoT e Prometheus
 
-## Tecnologias
+Foi desenvolvido um simulador em Python para gerar dados sintéticos de três equipamentos, identificados por `sensor_id`:
 
-* Docker
-* Docker Compose
-* Kubernetes
-* Kind
-* kubectl
-* K9s
-* Terraform
-* Java 17
-* Spring Boot
-* MySQL 8.0
-* Redis 7
-* Git
-* GitHub
+- `sensor-01`
+- `sensor-02`
+- `sensor-03`
 
-## Execução
+Cada equipamento tenta produzir três leituras a cada cinco segundos. Uma falha simulada interrompe aquela tentativa.
 
-### Docker Compose
+Os dados são independentes e aleatórios, não representando diagnósticos ou telemetria real.
 
-Para iniciar os serviços utilizando Docker Compose:
+O fluxo de monitoramento é:
 
-```bash
-docker compose up -d
+```text
+Simulador Python
+       |
+       v
+Service iot-simulator:8000
+       |
+       v
+Prometheus
+       |
+       v
+Grafana
 ```
 
-Para verificar os containers:
+O Prometheus realiza a coleta das métricas a cada 15 segundos.
 
-```bash
-docker compose ps
-```
-
-Para interromper os serviços:
-
-```bash
-docker compose down
-```
-
-O volume nomeado do MySQL permanece armazenado após o `docker compose down`.
-
-### Kubernetes
-
-Com o cluster Kubernetes local em execução, aplique os sete manifestos da base (API, MySQL e Redis) com o comando abaixo. Para simulador, Prometheus e Grafana, siga as seções específicas seguintes:
-
-```bash
-kubectl apply -f k8s/api-deployment.yaml -f k8s/api-service.yaml -f k8s/db-deployment.yaml -f k8s/db-service.yaml -f k8s/db-init-configmap.yaml -f k8s/redis-deployment.yaml -f k8s/redis-service.yaml
-```
-
-Para verificar os Pods:
-
-```bash
-kubectl get pods
-```
-
-Para verificar os Deployments:
-
-```bash
-kubectl get deployments
-```
-
-Para verificar os Services:
-
-```bash
-kubectl get services
-```
-
-## OAT 2 - Simulador IoT e Prometheus
-
-O simulador foi criado pela equipe para o OAT 2, conforme orientação do professor. Ele gera dados sintéticos de três equipamentos, identificados por `sensor_id` (`sensor-01` a `sensor-03`). Cada equipamento tenta produzir três leituras a cada cinco segundos; uma falha simulada interrompe aquela tentativa. Os valores são independentes e aleatórios; não representam diagnósticos ou telemetria real.
-
-O fluxo é: **simulador Python → Service iot-simulator:8000 → Prometheus**. O Prometheus coleta `/metrics` a cada 15 segundos. Os manifestos novos declaram explicitamente o namespace `mecaniqa`, definido pelo Terraform existente. Os manifestos anteriores de API, MySQL e Redis continuam com seu escopo original.
-
-### Métricas
+### Métricas disponibilizadas
 
 | Métrica | Tipo | Significado |
-| --- | --- | --- |
-| `iot_engine_temperature_celsius` | Gauge | Temperatura entre 70 e 110 °C |
-| `iot_oil_pressure_bar` | Gauge | Pressão do óleo entre 1,5 e 5,5 bar |
-| `iot_vibration_meters_per_second_squared` | Gauge | Aceleração de vibração entre 0,1 e 4 m/s² |
-| `iot_sensor_readings_total` | Counter | Total de leituras individuais: aumenta 3 por ciclo e equipamento |
-| `iot_sensor_last_update_timestamp_seconds` | Gauge | Horário Unix da última aquisição bem-sucedida por equipamento |
-| `iot_sensor_operations_total` | Counter | Tentativas por `sensor_id` e `result` (`success` ou `error`) |
+|---|---|---|
+| `iot_engine_temperature_celsius` | Gauge | Temperatura dos equipamentos |
+| `iot_oil_pressure_bar` | Gauge | Pressão do óleo |
+| `iot_vibration_meters_per_second_squared` | Gauge | Vibração dos equipamentos |
+| `iot_sensor_readings_total` | Counter | Total de leituras individuais |
+| `iot_sensor_last_update_timestamp_seconds` | Gauge | Horário da última aquisição bem-sucedida |
+| `iot_sensor_operations_total` | Counter | Tentativas de aquisição por equipamento e resultado |
 
-As métricas anteriores usam o label `sensor_id`; o Counter de operações também usa `result`. Cada sucesso gera três leituras; cada erro gera apenas uma operação com resultado `error`, sem renovar as leituras e o timestamp anteriores. O cliente Prometheus também expõe suas métricas padrão de processo/runtime conforme a plataforma. O contador reinicia quando o processo é reiniciado.
+O simulador também utiliza variáveis de ambiente para controlar a execução:
 
-| Variável de ambiente | Padrão | Valores aceitos |
-| --- | --- | --- |
-| `METRICS_PORT` | `8000` | Inteiro de 1 a 65535 |
-| `SIMULATION_INTERVAL_SECONDS` | `5` | Número finito maior que zero |
-| `SENSOR_COUNT` | `3` | Inteiro de 1 a 100 |
-| `SIMULATION_ERROR_PROBABILITY` | `0.1` | Número finito entre 0 e 1 |
+| Variável | Padrão | Finalidade |
+|---|---|---|
+| `METRICS_PORT` | `8000` | Porta das métricas |
+| `SIMULATION_INTERVAL_SECONDS` | `5` | Intervalo de simulação |
+| `SENSOR_COUNT` | `3` | Quantidade de equipamentos |
+| `SIMULATION_ERROR_PROBABILITY` | `0.1` | Probabilidade de falha simulada |
 
-Alterações da porta também exigem ajustar os manifestos do Deployment, Service e a configuração de coleta do Prometheus.
+### Descoberta automática de Pods
 
-O Prometheus utiliza descoberta automática de Pods do Kubernetes (`kubernetes_sd_configs`), com permissões específicas configuradas por RBAC. Dessa forma, cada réplica do simulador é identificada e monitorada individualmente, sem depender de um único endereço de Service para realizar a coleta.
+O Prometheus utiliza `kubernetes_sd_configs` para descobrir automaticamente os Pods do simulador.
 
-A descoberta considera os Pods do namespace `mecaniqa` que possuem o label `app=iot-simulator` e a porta nomeada `metrics`.
+A descoberta considera:
 
-### Executar somente o simulador
+- Namespace: `mecaniqa`.
+- Label: `app=iot-simulator`.
+- Porta nomeada: `metrics`.
 
-Na raiz do repositório, com Python 3.12 instalado, no PowerShell:
+Foram configuradas permissões específicas por RBAC para permitir a descoberta dos Pods.
 
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r iot-simulator/requirements.txt
-.\.venv\Scripts\python.exe iot-simulator/simulator.py
+Dessa forma, as réplicas do simulador podem ser identificadas e monitoradas individualmente.
+
+## 10. Grafana - Dashboards e alertas
+
+O Grafana foi integrado ao Prometheus para visualizar as métricas e acompanhar o comportamento da aplicação.
+
+Foram desenvolvidos quatro dashboards:
+
+| Dashboard | Indicador |
+|---|---|
+| CPU | Consumo de CPU do processo |
+| Memória | Memória residente do processo |
+| Erro na aplicação | Taxa de operações com erro |
+| Sucesso na aplicação | Taxa de operações bem-sucedidas |
+
+Os arquivos JSON dos dashboards estão em:
+
+```text
+monitoring/grafana/dashboards/
 ```
 
-Em outro terminal, consulte `http://localhost:8000/metrics`:
+A configuração do datasource e dos dashboards está em:
 
-```powershell
-curl.exe http://localhost:8000/metrics
+```text
+monitoring/grafana/provisioning/
 ```
 
-### Implantar no Kind
+As métricas de CPU e memória são obtidas por meio das métricas de processo exportadas pelo simulador Python.
 
-Pré-requisitos: Docker em execução, Kind, kubectl, Terraform e um cluster Kind existente. Execute os comandos a partir da raiz do repositório. Confirme o contexto antes de aplicar e ajuste o nome do cluster se não for `kind`:
+Elas representam o processo do simulador, não o consumo total do cluster.
 
-```powershell
-$clusterName = "kind"
-kind get clusters
-kubectl config current-context
+### Alertas configurados
+
+Foram configuradas quatro regras de alerta no Grafana:
+
+| Alerta | Condição |
+|---|---|
+| CPU acima de 80% da capacidade reservada | Consumo acima do limite definido |
+| Memória acima de 85% da capacidade reservada | Consumo acima do limite definido |
+| Taxa de erros acima de 20% | Percentual de erros superior a 20% |
+| Taxa de sucesso abaixo de 80% | Percentual de sucesso inferior a 80% |
+
+As regras possuem período de avaliação de cinco minutos.
+
+Os alertas são provisionados pelo arquivo:
+
+```text
+monitoring/grafana/provisioning/alerting/alert-rules.yaml
 ```
 
-Crie o namespace com a configuração Terraform existente (se ainda não foi criada, revise o plano antes de confirmar o apply):
+O provisionamento mantém as configurações declaradas nos arquivos do repositório.
 
-```powershell
-terraform -chdir=terraform init
-terraform -chdir=terraform plan
-terraform -chdir=terraform apply
-kubectl get namespace mecaniqa
+## 11. Metrics Server e escalabilidade automática (HPA)
+
+O Metrics Server foi instalado no cluster Kubernetes para fornecer métricas de utilização de CPU e memória ao Horizontal Pod Autoscaler.
+
+Manifesto:
+
+```text
+k8s/metrics-server.yaml
 ```
 
-Construa e carregue a imagem em todos os nós do cluster Kind:
-
-```powershell
-docker build -t mecaniqa-iot-simulator:0.2.0 ./iot-simulator
-kind load docker-image mecaniqa-iot-simulator:0.2.0 --name $clusterName
-```
-
-O simulador usa `imagePullPolicy: Never`, portanto a imagem precisa estar carregada antes da implantação. O Prometheus usa a imagem versionada `prom/prometheus:v3.5.0`, baixada do registry pelo cluster. Valide a configuração com o promtool da mesma versão antes de aplicar:
-
-```powershell
-$config = Get-Content -Raw k8s/prometheus-configmap.yaml
-# O ConfigMap começa seu conteúdo prometheus.yml após a linha do bloco literal.
-$prometheusYaml = ($config -split 'prometheus.yml: \|\r?\n', 2)[1] -replace '(?m)^    ', ''
-$prometheusYaml | docker run --rm -i --entrypoint /bin/sh prom/prometheus:v3.5.0 -c 'cat > /tmp/prometheus.yml && promtool check config /tmp/prometheus.yml'
-```
-
-Valide os recursos contra a API do cluster e aplique somente os arquivos desta etapa. O manifesto RBAC deve ser aplicado para disponibilizar a ServiceAccount utilizada pelo Prometheus:
-
-```powershell
-kubectl apply --dry-run=server --validate=strict -f k8s/iot-simulator-deployment.yaml -f k8s/iot-simulator-service.yaml -f k8s/prometheus-configmap.yaml -f k8s/prometheus-rbac.yaml -f k8s/prometheus-deployment.yaml -f k8s/prometheus-service.yaml
-
-kubectl apply -f k8s/iot-simulator-deployment.yaml -f k8s/iot-simulator-service.yaml -f k8s/prometheus-configmap.yaml -f k8s/prometheus-rbac.yaml -f k8s/prometheus-deployment.yaml -f k8s/prometheus-service.yaml
-
-kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
-kubectl -n mecaniqa rollout status deployment/prometheus --timeout=180s
-kubectl -n mecaniqa get pods,services
-kubectl -n mecaniqa logs deployment/iot-simulator
-```
-
-### Verificar a coleta
-
-Em dois terminais separados, mantenha os encaminhamentos abertos:
-
-```powershell
-kubectl -n mecaniqa port-forward service/iot-simulator 8000:8000
-```
-
-```powershell
-kubectl -n mecaniqa port-forward service/prometheus 9090:9090
-```
-
-Verifique `http://localhost:8000/metrics` e, no Prometheus, `http://localhost:9090/targets`. Aguarde pelo menos um intervalo de coleta e confirme que o job `iot-simulator` aparece como **UP**.
-
-Na interface `http://localhost:9090`, execute:
-
-```promql
-up{job="iot-simulator"}
-iot_engine_temperature_celsius
-rate(iot_sensor_readings_total[1m])
-time() - iot_sensor_last_update_timestamp_seconds
-```
-
-O resultado de `up` deve ser `1`; a temperatura deve apresentar três séries. Após alguns minutos, com 10% de falhas, a taxa média esperada é aproximadamente `0.54` leituras por segundo por equipamento. O tempo desde a atualização deve permanecer próximo dos intervalos de simulação/coleta. Se o alvo estiver DOWN, confira Pods, logs, selectors dos Services e acesso a `iot-simulator:8000` dentro do namespace.
-
-Esta versão usa `emptyDir` no Prometheus: o histórico é perdido quando o Pod é substituído. A retenção é de até um dia, limitada também a 256 MB de blocos; o volume tem limite de 512 MiB. Não há persistência para esta demonstração. Após modificar o ConfigMap, aplique-o e reinicie o Deployment para carregar a nova configuração:
-
-```powershell
-kubectl apply -f k8s/prometheus-configmap.yaml
-kubectl -n mecaniqa rollout restart deployment/prometheus
-```
-
-O commit da versão inicial na branch `main` será feito somente após a revisão das alterações e dos resultados de validação.
-
-## Monitorando a Continuidade - Grafana
-
-Esta etapa acrescenta **exatamente quatro dashboards**: **CPU**, **Memória**, **Erro na aplicação** e **Sucesso na aplicação**. Os JSON completos para importação/exportação estão em `monitoring/grafana/dashboards/`; a fonte de dados e o provider estão em `monitoring/grafana/provisioning/`. Esses arquivos são a fonte de verdade: altere-os no Git e reaplique o Kustomize para atualizar o Grafana. O provisionamento bloqueia salvar mudanças pela interface; se editar uma cópia para experimentar, exporte o JSON clássico, substitua o arquivo correspondente e remova a cópia do Grafana para manter somente os quatro dashboards.
-
-### Decisão sobre as métricas
-
-Não há node-exporter, cAdvisor ou kube-state-metrics configurados no repositório. Por isso, os dashboards do Grafana utilizam as métricas de processo exportadas pelo próprio simulador Python, por meio do coletor padrão do `prometheus-client` no Linux.
-
-O Metrics Server também foi instalado no cluster, mas sua finalidade nesta atividade é fornecer métricas de CPU e memória ao HPA. Ele não substitui exporters nem configura automaticamente a coleta dessas métricas pelo Prometheus.
-
-| Métrica | Tipo | Escopo |
-| --- | --- | --- |
-| `process_cpu_seconds_total` | Counter | Tempo acumulado de CPU do processo Python |
-| `process_resident_memory_bytes` | Gauge | Memória residente (RSS) do processo Python |
-| `iot_sensor_operations_total` | Counter | Tentativas de aquisição, labels `sensor_id` e `result` |
-
-As métricas `process_*` são exportadas automaticamente no container Linux. Não representam o consumo total do cluster nem substituem métricas de infraestrutura.
-
-CPU de 100% significa um núcleo ocupado; não é percentual do limite de 200m do Deployment. A memória RSS também não é necessariamente igual à memória apresentada pelo `kubectl top pods`.
-
-O ajuste mínimo no simulador foi adicionar `iot_sensor_operations_total` e `SIMULATION_ERROR_PROBABILITY` (padrão `0.1`). Uma tentativa é feita por equipamento por ciclo, com um único resultado. Ambas as séries são inicializadas em zero. Uma falha sintética de aquisição não produz leituras e preserva o último dado válido. Um valor alto de temperatura não é contado como erro da aplicação. As dependências permanecem `prometheus-client==0.22.1` e biblioteca padrão Python.
-
-Quando houver acesso ao cluster, confira sua fonte de infraestrutura antes de ampliar esse escopo (nenhum desses comandos instala exporters):
-
-```powershell
-kubectl get deployments,daemonsets,services -A | Select-String 'prometheus|node-exporter|kube-state-metrics|cadvisor'
-kubectl -n mecaniqa port-forward service/prometheus 9090:9090
-# Em outro terminal, consulte os targets e as famílias efetivamente coletadas:
-Invoke-RestMethod http://localhost:9090/api/v1/targets
-Invoke-RestMethod http://localhost:9090/api/v1/label/__name__/values
-```
-
-A presença de metrics-server ou o funcionamento de `kubectl top` não garante que o Prometheus colete CPU/memória de infraestrutura.
-
-### Implantação e acesso
-
-Siga os pré-requisitos da seção OAT 2 e confirme o contexto e o namespace `mecaniqa`. O Prometheus existente deve estar disponível. Reconstrua a imagem porque o código e a tag mudaram de `0.1.0` para `0.2.0`:
-
-```powershell
-$clusterName = "kind" # ajuste para seu cluster
-kubectl config current-context
-kubectl get namespace mecaniqa
-docker build -t mecaniqa-iot-simulator:0.2.0 ./iot-simulator
-kind load docker-image mecaniqa-iot-simulator:0.2.0 --name $clusterName
-kubectl apply --dry-run=server --validate=strict -f k8s/iot-simulator-deployment.yaml
-kubectl apply -f k8s/iot-simulator-deployment.yaml
-kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
-```
-
-Crie o Secret administrativo no cluster, sem versionar a senha. Execute uma vez; se o Secret já existir, use as credenciais que ele contém:
-
-```powershell
-$credential = Get-Credential -UserName admin -Message "Credenciais do Grafana"
-$adminPassword = $credential.GetNetworkCredential().Password
-kubectl -n mecaniqa create secret generic grafana-admin --from-literal=admin-user=$($credential.UserName) --from-literal=admin-password=$adminPassword
-Remove-Variable adminPassword,credential
-```
-
-O `kustomization.yaml` na raiz gera **somente os recursos do Grafana**. Ele gera ConfigMaps com hash e atualiza as referências do Deployment, fazendo as mudanças de provisionamento entrarem no próximo Pod. Não aplique só os dois YAML do Grafana, pois eles dependem desses ConfigMaps e do Secret acima.
-
-```powershell
-kubectl kustomize .
-kubectl apply --dry-run=server --validate=strict -k .
-kubectl apply -k .
-kubectl -n mecaniqa rollout status deployment/grafana --timeout=180s
-kubectl -n mecaniqa logs deployment/grafana
-kubectl -n mecaniqa port-forward service/grafana 3000:3000
-```
-
-Abra `http://localhost:3000`, entre com as credenciais do Secret e abra a pasta **Monitorando a Continuidade**. Devem existir somente os quatro dashboards da entrega. A fonte **Prometheus** tem UID `mecaniqa-prometheus` e URL interna `http://prometheus.mecaniqa.svc.cluster.local:9090`. A URL é usada pelo servidor Grafana; `localhost:9090` no Pod do Grafana não apontaria para o Prometheus.
-
-O Grafana usa imagem `grafana/grafana:12.3.0` e `emptyDir` para dados locais. Usuários, sessões e mudanças locais se perdem se o Pod for substituído; os quatro dashboards, a fonte de dados e as regras de alerta são restaurados pelos arquivos de provisionamento.
-
-As regras de alerta são declaradas em `monitoring/grafana/provisioning/alerting/alert-rules.yaml` e carregadas automaticamente pelo Grafana.
-
-### Consultas reais dos quatro dashboards
-
-Todos os painéis filtram `job="iot-simulator"`. CPU e memória mostram uma série por instância; erro e sucesso agregam os equipamentos. Há dois painéis em cada dashboard (histórico e valor/percentual atual), sem dashboards adicionais.
-
-| Dashboard | Consulta principal |
-| --- | --- |
-| CPU | `100 * rate(process_cpu_seconds_total{job="iot-simulator"}[1m])` |
-| Memória | `process_resident_memory_bytes{job="iot-simulator"}` |
-| Erro na aplicação | `sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))` |
-| Sucesso na aplicação | `sum(rate(iot_sensor_operations_total{job="iot-simulator",result="success"}[1m]))` |
-
-O percentual de erro é:
-
-```promql
-100 * sum(rate(iot_sensor_operations_total{job="iot-simulator",result="error"}[1m]))
-/ sum(rate(iot_sensor_operations_total{job="iot-simulator"}[1m]))
-```
-
-O percentual de sucesso troca apenas `result="error"` por `result="success"` no numerador. A divisão não usa `or vector(0)`: sem tentativas, retorna NaN e o painel mostra ausência de dados/tráfego. Sem coleta, as consultas ficam sem séries. `rate` é calculado antes de `sum` para tratar reinícios individuais dos Counters.
-
-### Validação da entrega
-
-Com Python/dependências locais, execute os testes deterministas do simulador:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-Valide as seis consultas distintas com `promtool` 3.5.0. As séries de teste são fixtures, não leituras do cluster; os 16 casos cobrem resultados conhecidos, tráfego zero e coleta ausente:
-
-```powershell
-docker run --rm --entrypoint /bin/promtool -v "${PWD}/monitoring:/work:ro" prom/prometheus:v3.5.0 test rules /work/promql-tests.yaml
-Get-ChildItem monitoring/grafana/dashboards/*.json | ForEach-Object { Get-Content -Raw -LiteralPath $_.FullName | ConvertFrom-Json | Select-Object uid,title }
-kubectl apply --dry-run=server --validate=strict -k .
-git diff --check
-```
-
-Com os serviços em execução, encaminhe Prometheus e simulador em terminais separados e confira os nomes/tipos no endpoint:
-
-```powershell
-kubectl -n mecaniqa port-forward service/iot-simulator 8000:8000
-kubectl -n mecaniqa port-forward service/prometheus 9090:9090
-# Em outro terminal:
-curl.exe http://localhost:8000/metrics
-```
-
-No Prometheus, confirme `up{job="iot-simulator"} == 1` e execute as seis consultas acima. Aguarde ao menos duas coletas (30–60 segundos) para as taxas. Confira os Counters de sucesso/erro, CPU em percentual de um núcleo e RSS em bytes. Para comprovar que os Counters mudam, consulte o endpoint antes e depois de alguns ciclos. A probabilidade padrão é aleatória, portanto não exige erro em toda janela.
-
-Para testar os extremos, execute cada etapa separadamente, aguardando o rollout e 30–60 segundos de novas coletas antes de observar os dashboards:
-
-```powershell
-# Primeiro: 100% de erros
-kubectl -n mecaniqa set env deployment/iot-simulator SIMULATION_ERROR_PROBABILITY=1
-kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
-# Depois de observar: 100% de sucessos
-kubectl -n mecaniqa set env deployment/iot-simulator SIMULATION_ERROR_PROBABILITY=0
-kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
-# Depois de observar: restaure a probabilidade padrão de 10%
-kubectl apply -f k8s/iot-simulator-deployment.yaml
-kubectl -n mecaniqa rollout status deployment/iot-simulator --timeout=120s
-```
-
-No Grafana, confirme o datasource saudável e as quatro telas. CPU e memória precisam do processo Linux: rodar apenas o simulador nativo no Windows deixa esses dois dashboards sem dados, mesmo com erro/sucesso funcionando.
-
-Referências: [provisionamento Grafana](https://grafana.com/docs/grafana/latest/administration/provisioning/), [coletor de processo Python](https://prometheus.github.io/client_python/collector/) e [testes PromQL](https://prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/).
-
-## OAT 2 - Encontro 21/10: Alertas e Escalonamento Automático
-
-Nesta etapa, foram implementados mecanismos de monitoramento e escalonamento automático para o simulador IoT, utilizando Grafana, Prometheus, Metrics Server e Kubernetes HPA.
-
-### Alertas do Grafana
-
-Foram configuradas quatro regras de alerta no Grafana, utilizando métricas coletadas pelo Prometheus:
-
-| Alerta | Condição | Período |
-| --- | --- | --- |
-| CPU acima de 80% da capacidade reservada | CPU do processo acima de 4% de um núcleo | 5 minutos |
-| Memória RSS do processo acima de 27,2 MiB | Memória residente do processo acima do limite definido para o alerta | 5 minutos |
-| Taxa de erros acima de 20% | Percentual de operações com erro acima de 20% | 5 minutos |
-| Taxa de sucesso abaixo de 80% | Percentual de operações bem-sucedidas abaixo de 80% | 5 minutos |
-
-Os limites de CPU e memória foram definidos considerando as solicitações de recursos do Deployment do simulador. O limite de memória utiliza o RSS do processo Python, enquanto o HPA utiliza as métricas de memória do container fornecidas pelo Metrics Server. Portanto, essas medições não são necessariamente iguais. Os limites das métricas de erro e sucesso foram definidos para identificar situações de degradação das operações simuladas.
-
-As regras são provisionadas por meio do arquivo:
-
-`monitoring/grafana/provisioning/alerting/alert-rules.yaml`
-
-O Deployment do Grafana monta esse arquivo no diretório de provisionamento de alertas. O `kustomization.yaml` gera o ConfigMap correspondente e atualiza o Deployment quando a configuração é alterada.
-
-### Metrics Server
-
-O Metrics Server foi instalado no cluster Kubernetes para fornecer as métricas de utilização de CPU e memória necessárias ao Horizontal Pod Autoscaler.
-
-O manifesto utilizado está em:
-
-`k8s/metrics-server.yaml`
-
-No ambiente local com Kind, foi habilitada a opção `--kubelet-insecure-tls` para permitir a comunicação com os kubelets do cluster de estudo. Essa configuração é específica para o laboratório e não deve ser adotada como padrão em ambientes de produção.
-
-A instalação pode ser realizada com:
-
-```bash
-kubectl apply -f k8s/metrics-server.yaml
-```
-
-A coleta pode ser verificada com:
+Verificação:
 
 ```bash
 kubectl top nodes
 kubectl top pods -n mecaniqa
 ```
 
-### Horizontal Pod Autoscaler (HPA)
+### Horizontal Pod Autoscaler
 
-Foi criado um Horizontal Pod Autoscaler para o Deployment `iot-simulator`.
+Foi configurado um HPA para o Deployment `iot-simulator`.
 
 Manifesto:
 
-`k8s/iot-simulator-hpa.yaml`
+```text
+k8s/iot-simulator-hpa.yaml
+```
 
-Configuração utilizada:
+Configuração:
 
 | Parâmetro | Valor |
-| --- | --- |
+|---|---|
 | Réplicas mínimas | 1 |
 | Réplicas máximas | 5 |
-| Meta de utilização de CPU | 70% |
-| Meta de utilização de memória | 80% |
+| Meta de CPU | 70% |
+| Meta de memória | 80% |
 | Estabilização para redução | 300 segundos |
 
-O HPA utiliza as solicitações de recursos configuradas no Deployment para calcular a utilização percentual de CPU e memória.
+O HPA utiliza as solicitações de recursos do Deployment para calcular a utilização percentual de CPU e memória.
 
-A aplicação do manifesto é realizada com:
+Aplicação:
 
 ```bash
 kubectl apply -f k8s/iot-simulator-hpa.yaml
 ```
 
-Para acompanhar o escalonamento:
+Acompanhamento:
 
 ```bash
 kubectl get hpa -n mecaniqa
@@ -679,41 +454,17 @@ kubectl get deployment iot-simulator -n mecaniqa
 kubectl top pods -n mecaniqa
 ```
 
-### Descoberta automática dos Pods pelo Prometheus
+### Teste de carga
 
-A configuração do Prometheus foi atualizada para utilizar a descoberta de Pods do Kubernetes.
+Foi realizado um teste de carga aumentando a quantidade de sensores simulados e reduzindo o intervalo entre as leituras.
 
-Os arquivos envolvidos são:
-
-- `k8s/prometheus-rbac.yaml` — ServiceAccount, Role e RoleBinding para permitir a descoberta dos Pods.
-- `k8s/prometheus-deployment.yaml` — associação da ServiceAccount ao Deployment.
-- `k8s/prometheus-configmap.yaml` — configuração de descoberta e coleta das métricas.
-
-A coleta utiliza o namespace `mecaniqa`, o label `app=iot-simulator` e a porta nomeada `metrics`.
-
-Com isso, cada réplica do simulador passa a ser monitorada individualmente, inclusive quando o HPA aumenta ou reduz a quantidade de Pods.
-
-### Teste de carga e escalonamento
-
-Para demonstrar o funcionamento do HPA, foi realizado um teste de carga aumentando a quantidade de sensores simulados e reduzindo o intervalo entre as leituras.
-
-O comando utilizado foi:
+Comando utilizado:
 
 ```bash
 kubectl set env deployment/iot-simulator -n mecaniqa SENSOR_COUNT=100 SIMULATION_INTERVAL_SECONDS=0.1
 ```
 
-Após a atualização do Deployment, o Kubernetes identificou o aumento da utilização de CPU e realizou o escalonamento automático do simulador.
-
-Durante o teste, o HPA atingiu o limite configurado de cinco réplicas, todas disponíveis.
-
-O acompanhamento foi realizado com:
-
-```bash
-kubectl get hpa -n mecaniqa
-kubectl get deployment iot-simulator -n mecaniqa
-kubectl top pods -n mecaniqa
-```
+Durante o teste, o HPA identificou o aumento da utilização de CPU e escalou automaticamente o simulador até o limite configurado de cinco réplicas.
 
 Após o teste, os parâmetros originais foram restaurados:
 
@@ -721,73 +472,281 @@ Após o teste, os parâmetros originais foram restaurados:
 kubectl set env deployment/iot-simulator -n mecaniqa SIMULATION_ERROR_PROBABILITY=0.1 SENSOR_COUNT=3 SIMULATION_INTERVAL_SECONDS=5
 ```
 
-O Deployment voltou a operar com a configuração normal de simulação, enquanto o HPA passou a ajustar a quantidade de réplicas conforme as métricas observadas.
+Após a redução da carga, o HPA também reduziu a quantidade de réplicas.
 
-### Evidências
+### Evidências do teste
 
-Foram registradas capturas de tela durante a execução dos testes:
+Foram registradas as seguintes capturas de tela:
 
-- `01-pods-consumo-recursos.png` — consumo de recursos dos Pods durante o teste de carga.
-- `02-hpa-escalabilidade.png` — HPA demonstrando o escalonamento até cinco réplicas.
-- `03-deployment-cinco-replicas.png` — Deployment confirmando cinco réplicas disponíveis.
-- `04-alertas-grafana-firing.png` — Grafana demonstrando regras de alerta em estado `Firing`.
-- `05-hpa-reducao-de-replicas.png` — HPA demonstrando a redução posterior da quantidade de réplicas.
+- `01-pods-consumo-recursos.png` - consumo de recursos dos Pods.
+- `02-hpa-escalabilidade.png` - escalonamento até cinco réplicas.
+- `03-deployment-cinco-replicas.png` - cinco réplicas disponíveis.
+- `04-alertas-grafana-firing.png` - alertas em estado `Firing`.
+- `05-hpa-reducao-de-replicas.png` - redução posterior de réplicas.
 
-As capturas de tela foram salvas como evidências da execução da atividade.
+## 12. Persistência do MySQL
 
-### Estrutura dos arquivos de monitoramento e escalonamento
+Para evitar a perda dos dados durante a substituição ou recriação do Pod, foi configurado armazenamento persistente no Kubernetes.
+
+Foi criado o PersistentVolumeClaim:
 
 ```text
-k8s/
-├── grafana-deployment.yaml
-├── grafana-service.yaml
-├── iot-simulator-deployment.yaml
-├── iot-simulator-hpa.yaml
-├── metrics-server.yaml
-├── prometheus-configmap.yaml
-├── prometheus-deployment.yaml
-├── prometheus-rbac.yaml
-└── ...
-
-monitoring/
-└── grafana/
-    ├── dashboards/
-    │   ├── cpu.json
-    │   ├── memoria.json
-    │   ├── erro-aplicacao.json
-    │   └── sucesso-aplicacao.json
-    └── provisioning/
-        ├── alerting/
-        │   └── alert-rules.yaml
-        ├── dashboards.yaml
-        └── datasources.yaml
+mysql-pvc
 ```
 
-## Equipe
+Configuração:
+
+| Propriedade | Valor |
+|---|---|
+| Capacidade | 5 GiB |
+| StorageClass | standard |
+| Access Mode | ReadWriteOnce |
+| Namespace | default |
+
+O volume é montado no diretório:
+
+```text
+/var/lib/mysql
+```
+
+Esse é o diretório utilizado pelo MySQL para armazenar seus dados.
+
+A configuração está definida em:
+
+```text
+k8s/db-pvc.yaml
+k8s/db-deployment.yaml
+```
+
+A persistência foi validada com o PVC em estado `Bound` e o MySQL em execução.
+
+## 13. Backup automático e recuperação
+
+Além da persistência, foi configurado um volume separado para armazenar os arquivos de backup.
+
+PVC:
+
+```text
+mysql-backup-pvc
+```
+
+Capacidade: 5 GiB.
+
+O backup é realizado por um Kubernetes CronJob:
+
+```text
+mysql-backup
+```
+
+Manifesto:
+
+```text
+k8s/db-backup-cronjob.yaml
+```
+
+### Funcionamento
+
+O CronJob utiliza o `mysqldump` para exportar o banco `mecaniqa`.
+
+O agendamento configurado é:
+
+```text
+0 2 * * *
+```
+
+Ou seja, uma execução diária às 2h, conforme o fuso horário do cluster.
+
+Os arquivos são armazenados no diretório:
+
+```text
+/backups
+```
+
+Os nomes incluem a data e o horário da execução.
+
+### Validação realizada
+
+Em 13/11/2026, foi executado um backup manual a partir do CronJob.
+
+Resultado:
+
+| Item | Resultado |
+|---|---|
+| Job | `mysql-backup-teste` |
+| Status | Complete |
+| Arquivo | `mecaniqa-20261113-145138.sql` |
+| Tamanho | 1,3 KB |
+| PVC do banco | Bound |
+| PVC de backup | Bound |
+| Verificação do arquivo | Concluída |
+
+O arquivo foi localizado dentro do volume de backup e a verificação confirmou que não estava vazio.
+
+O banco estava sem tabelas e registros durante o teste, por isso o arquivo gerado possui tamanho reduzido.
+
+### Recuperação
+
+O procedimento de recuperação está documentado em:
+
+```text
+docs/backup-e-recuperacao.md
+```
+
+A restauração pode ser realizada por meio da importação de um arquivo SQL no banco MySQL.
+
+Exemplo:
+
+```bash
+kubectl exec -i -n default deploy/db -- sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" mecaniqa' < backup.sql
+```
+
+O arquivo `backup.sql` deve estar disponível no diretório local em que o comando for executado.
+
+**Limitação:** os volumes utilizam armazenamento local provisionado pela StorageClass `standard`. Embora o volume de backup seja separado do volume do banco, ambos permanecem no mesmo cluster. A perda do cluster ou do nó pode comprometer os dois volumes.
+
+Recomenda-se copiar periodicamente os arquivos de backup para armazenamento externo.
+
+A geração e o armazenamento do backup foram validados, mas a restauração ainda não foi testada.
+
+## 14. Runbooks operacionais
+
+Foram elaborados quatro runbooks para orientar a equipe na identificação e resposta a incidentes.
+
+Documento:
+
+```text
+docs/runbooks.md
+```
+
+Os procedimentos abrangem:
+
+1. CPU acima de 80% da capacidade reservada.
+2. Memória acima de 85% da capacidade reservada.
+3. Taxa de erros da aplicação acima de 20%.
+4. Taxa de sucesso da aplicação abaixo de 80%.
+
+Os runbooks apresentam procedimentos de diagnóstico, investigação e ações de recuperação para cada situação.
+
+Eles complementam os alertas do Grafana e auxiliam na padronização da resposta a incidentes.
+
+## 15. Gestão de serviços - SLA, SLO, SLI, RTO e RPO
+
+Foi elaborado um documento de gestão de serviços para estabelecer objetivos de disponibilidade e recuperação da plataforma.
+
+Documento:
+
+```text
+docs/gestao-servicos.md
+```
+
+### SLA - Service Level Agreement
+
+Meta proposta de disponibilidade:
+
+**99,9%.**
+
+Representa o nível de serviço estabelecido como referência para a plataforma.
+
+### SLO - Service Level Objective
+
+Objetivo interno de disponibilidade:
+
+**99,95%.**
+
+É uma meta mais rigorosa que o SLA.
+
+### SLI - Service Level Indicator
+
+Indicadores utilizados para acompanhar o serviço:
+
+- Disponibilidade.
+- Taxa de erros.
+- Taxa de sucesso.
+- Utilização de CPU.
+- Utilização de memória.
+
+Os indicadores de erro, sucesso, CPU e memória são acompanhados por meio do Prometheus e Grafana.
+
+A disponibilidade foi definida como indicador, mas ainda não possui uma medição contínua específica implementada.
+
+### RTO - Recovery Time Objective
+
+Meta proposta de recuperação do serviço:
+
+**Até 4 horas.**
+
+Representa o tempo máximo desejado para recuperar o funcionamento após uma interrupção.
+
+### RPO - Recovery Point Objective
+
+Meta proposta de perda máxima de dados:
+
+**Até 24 horas.**
+
+Está relacionada ao agendamento diário de backups do MySQL.
+
+Os valores de RTO e RPO são objetivos de planejamento e ainda dependem de testes de recuperação para comprovação.
+
+## 16. K9s
+
+O K9s foi utilizado para observar e administrar o cluster Kubernetes.
+
+Com a ferramenta, foram acompanhados:
+
+- Pods.
+- Deployments.
+- Services.
+- Logs.
+- Estado dos containers.
+- Número de reinicializações.
+
+Também foi realizado um teste de auto-recuperação, removendo um Pod da API e observando sua recriação automática pelo Deployment.
+
+## 17. Documentação complementar
+
+Os documentos técnicos do projeto estão organizados no diretório `docs/`:
+
+| Documento | Conteúdo |
+|---|---|
+| `runbooks.md` | Procedimentos de diagnóstico e resposta a incidentes |
+| `backup-e-recuperacao.md` | Persistência, backup e recuperação do MySQL |
+| `gestao-servicos.md` | SLA, SLO, SLI, RTO e RPO |
+
+## 18. Considerações finais
+
+O projeto MecâniQA Nuvem demonstra a evolução de uma infraestrutura baseada em containers para um ambiente gerenciado pelo Kubernetes.
+
+Foram implementados mecanismos de observabilidade, monitoramento, alertas, escalabilidade horizontal automática, persistência de dados e backups automatizados.
+
+A utilização de Prometheus e Grafana permite acompanhar indicadores operacionais, enquanto o HPA ajusta automaticamente a quantidade de réplicas conforme o consumo de recursos.
+
+Os PersistentVolumeClaims mantêm os dados do MySQL fora do ciclo de vida do Pod, e o CronJob automatiza a geração de backups.
+
+Os runbooks e a documentação de gestão de serviços complementam a infraestrutura, estabelecendo procedimentos de resposta a incidentes e objetivos de disponibilidade e recuperação.
+
+## 19. Equipe
 
 **Time Vitória**
 
-| Integrante      | Função               |
-| --------------- | -------------------- |
-| Aeverton        | Integrante da equipe |
-| Caio            | Integrante da equipe |
+| Integrante | Função |
+|---|---|
+| Aeverton | Integrante da equipe |
+| Caio | Integrante da equipe |
 | Carlos Henrique | Integrante da equipe |
-| Jonatas         | Integrante da equipe |
-| Maciel          | Integrante da equipe |
-| Natan           | Integrante da equipe |
+| Jonatas | Integrante da equipe |
+| Maciel | Integrante da equipe |
+| Natan | Integrante da equipe |
 
-As funções de Piloto, Copiloto, QA, Arquiteto e Scrum Master são distribuídas de acordo com o rodízio definido pela equipe durante os encontros.
+As funções de Piloto, Copiloto, QA, Arquiteto e Scrum Master são distribuídas conforme o rodízio definido pela equipe durante os encontros.
 
-## Repositório
+## 20. Repositório
 
-Código-fonte do projeto:
+Código-fonte:
 
-```text
 https://github.com/natzinho/mecaniQA-nuvem-vitoria.git
-```
 
-## Atividade
+---
 
-A atividade faz parte do programa de trainee da **MecâniQA - Automotive Tech** e tem como objetivo desenvolver conhecimentos práticos em **virtualização, containers, imagens Docker, orquestração, Kubernetes, observabilidade e Infrastructure as Code**.
+**Atividade:** programa de trainee da MecâniQA - Automotive Tech.
 
-O projeto acompanha a evolução da infraestrutura desde o isolamento dos serviços em containers até seu gerenciamento declarativo em um cluster Kubernetes.
+**Disciplina:** Computação em Nuvem.
